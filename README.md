@@ -1,4 +1,4 @@
-# infotopo2
+# infotopo
 
 A Python package for carrying out some analysis of "typical"<sup>1</sup> mathematical models, including:
 * parameter estimation 
