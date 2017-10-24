@@ -1,0 +1,35 @@
+
+
+## Python
+*.pyc
+*.pyo
+*.pyf
+
+## Back-up files
+*~
+*.bak
+
+*.o
+*.so
+
+*.gz
+*.zip
+
+*.log
+
+ 
+## OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Trashes
+Thumbs.db
+
+.project
+.pydevproject
+
+# Mathematica
+*.nb
+
+# directories
+tmp/
