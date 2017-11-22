@@ -13,3 +13,31 @@ Note 1: The technical definition of "typical" here is any mathematical model who
 Note 2: See http://doi.org/10.1103/PhysRevE.83.036701 and http://arxiv.org/abs/1409.6203. 
 
 ## Prerequisites
+
+
+## Usage examples
+```python
+mod = Model()
+expts = Experiments()
+
+pred = mod.get_pred(expts)
+
+s = pred.get_spectrum()
+
+dat = pred.get_data()
+
+res = residual.Residual(pred, dat)
+
+fit = fitting.leverberg_marquardt(res, p0)
+
+ens = sampling.sampling(res, p0, nstep=100)
+
+ens.scatterplot()
+
+gds = pred.get_geodesic()
+
+gds.integrate()
+
+gds.plot()
+
+```
