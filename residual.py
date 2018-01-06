@@ -1,8 +1,0 @@
-"""
-"""
-
-
-class Residual(object):
-    """
-    """
-    pass
