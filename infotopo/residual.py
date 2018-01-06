@@ -1,0 +1,8 @@
+"""
+"""
+
+
+class Residual(object):
+    """
+    """
+    pass
