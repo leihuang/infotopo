@@ -6,8 +6,9 @@ from __future__ import (absolute_import, division, print_function,
 import logging
 
 import numpy as np
+import pandas as pd
 
-import util
+from infotopo import util
 
 
 
@@ -108,32 +109,53 @@ class Predict(object):
         assert self.ptype == '', "not in bare parametrization"
         
         def _f_logp(logp):
-            p = np.exp(np.array(logp))
+            p = np.exp(logp)
             return self._f(p)
         
         def _Df_logp(logp):
             # d y/d logp = d y/(d p/p) = (d y/d p) * p
-            p = np.exp(np.array(logp))
+            p = np.exp(logp)
             return self._Df(p) * p
 
-        logp0 = np.log(np.array(self.p0))
-        logpids = ['log_'+pid for pid in self.pids]
+        logpids = map(lambda pid: 'log_'+pid, self.pids)
+        logp0 = util.Series(np.log(self._p0), logpids)
 
         pred_logp = Predict(f=_f_logp, Df=_Df_logp, p0=logp0,
                             pids=logpids, yids=self.yids, ptype='logp')
         return pred_logp
 
 
-    def get_errorbar(self):
+    def get_sigma(self, p=None, errormodel='constant', constant_sigma=1, 
+                  cv=0.1):
+        """Calculate the error bars (sigmas) of data from the specified 
+        *error model*; the default is a constant error bar of 1 (equivalent 
+        to unweighted least square).
+        
+        :param errormodel: 'constant': constant sigma of sigma0 (default)                           
+                           'cv': proportional to y by cv
+                           'mixed': the max of error models 'constant' and 'cv'
+        :param constant_sigma: constant sigma; default is 1
+        :param cv: value of coefficient of variation 
+            (if errormodel is 'cv' or 'mixed')
         """
-        """
-        raise NotImplementedError
+        y = self.f(p)
+        if errormodel == 'constant':
+            sigma = util.Series([constant_sigma] * len(y), self.yids)
+        if errormodel == 'cv':
+            sigma = y * cv
+        if errormodel == 'mixed':
+            sigma = util.Series(np.max((y*cv, [constant_sigma]*len(y)), axis=0),
+                                self.yids)
+        return sigma
 
 
-    def get_dat(self):
+    def get_dat(self, p=None, **kwargs):
         """
+        *param p:
+        *param kwargs: kwargs of Predict.get_sigma
         """
-        raise NotImplementedError
+        return pd.DataFrame([self.f(p), self.get_sigma(p=p, **kwargs)], 
+                            index=['Y','sigma']).T
 
 
     def scale(self):

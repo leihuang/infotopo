@@ -22,9 +22,10 @@ import pytest
 import numpy as np
 
 from infotopo import predict
+reload(predict)
 
 
-@pytest.fixture()
+#@pytest.fixture()
 def preds():
     Cs = [(2,1), (3,1)]
     ts = [1,2,3]
