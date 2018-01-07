@@ -11,34 +11,35 @@ from rxnnet.util import Series, Matrix
 def flatten(nested, depth=None):
     """
     """
-    pass
+    raise NotImplementedError
 
 
 
 def get_product():
     """
     """
-    pass
+    raise NotImplementedError
+
 
 
 def sub_expr(s, mapping):
     """
     """
-    pass
+    raise NotImplementedError
 
 
 
 def simplify_expr(s):
     """
     """
-    pass
+    raise NotImplementedError
 
 
 
 def diff_expr(s):
     """
     """
-    pass
+    raise NotImplementedError
 
 
 

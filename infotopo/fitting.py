@@ -3,29 +3,29 @@
 
 
 class Fit(object):
-    pass
+    raise NotImplementedError
 
 
 
 def nelder_mead(res):
-    pass
+    raise NotImplementedError
 
 
 
 def gradient_descent(res):
-    pass
+    raise NotImplementedError
 
 
 
 def gauss_newton(res):
-    pass
+    raise NotImplementedError
 
 
 
 def levenberg_marquardt(res):
     """
     """
-    pass
+    raise NotImplementedError
 
 
 
