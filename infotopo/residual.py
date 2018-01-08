@@ -4,7 +4,10 @@
 from __future__ import (absolute_import, division, print_function, 
                         unicode_literals)
 
-from infotopo.util import Series, Matrix
+import numpy as np
+
+from .util import Series, Matrix
+
 
 
 class Residual(object):
@@ -43,9 +46,26 @@ class Residual(object):
         self.p0 = p0
         self.pred = pred
         self.dat = dat
+        self.ptype = pred.ptype
     
+
     
     def __call__(self, p=None):
         return self.r(p=p)
+
+
+
+    def get_in_logp(self):
+        """
+        """
+        assert self.ptype == '', "residual not in bare parametrization"
+        pred, dat = self.pred, self.dat
+        pred_logp = pred.get_in_logp()
+        return Residual(pred_logp, dat)
+
+
+
+    def cost(self, p=None):
+        return np.linalg.norm(self(p))**2 / 2
 
 
