@@ -27,7 +27,7 @@ class Residual(object):
         def r(p=None):
             if p is None:
                 p = p0
-            return Series(_r(p), yids)
+            return Series(_r(p), self.yids)
         
         def _Dr(p):
             return - (pred._Df(p).T / sigma).T
@@ -35,7 +35,7 @@ class Residual(object):
         def Dr(p=None):
             if p is None:
                 p = p0
-            return Matrix(_Dr(p), yids, pids)
+            return Matrix(_Dr(p), self.yids, self.pids)
         
         self._r = _r
         self._Dr = _Dr
@@ -48,11 +48,9 @@ class Residual(object):
         self.dat = dat
         self.ptype = pred.ptype
     
-
     
     def __call__(self, p=None):
         return self.r(p=p)
-
 
 
     def get_in_logp(self):
@@ -62,7 +60,6 @@ class Residual(object):
         pred, dat = self.pred, self.dat
         pred_logp = pred.get_in_logp()
         return Residual(pred_logp, dat)
-
 
 
     def cost(self, p=None):

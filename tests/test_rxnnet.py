@@ -20,6 +20,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import pytest
 import numpy as np
+import pandas as pd
 
 from infotopo import predict
 reload(predict)
@@ -102,9 +103,22 @@ def test_spectrum(preds):
     assert np.allclose(pred_xt.get_spectrum(p), [0.445993544186507,0.0667379352854524])
 
 
+def test_add(preds):
+    pred_xc, pred_jc, pred_xt = preds
+    p = [1,2]
+    pred = pred_xc + pred_jc
+    assert np.allclose(pred.f(p), [4/3, 5/3, 2/3, 4/3])
+    assert np.allclose(pred.Df(p), [[2/9,-1/9],[4/9,-2/9],[4/9,1/9],[8/9,2/9]])
+    assert np.allclose(pred.get_spectrum(p), [1.11719,0.331519])
+
+
 def test_get_dat(preds):
-    #dat = pred.get_dat()
-    pass
+    pred_xc, pred_jc, pred_xt = preds
+    p = [1,2]
+    pd.testing.assert_frame_equal(pred_xc.get_dat(p), 
+                                  pd.DataFrame([[4/3,1.],[5/3,1.]], 
+                                               index=['y_1','y_2'], 
+                                               columns=['Y','sigma']))
 
 
 

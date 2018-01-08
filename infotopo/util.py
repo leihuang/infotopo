@@ -4,8 +4,28 @@
 from __future__ import (absolute_import, division, print_function, 
                         unicode_literals)
 
+import pandas as pd
+
 from rxnnet.util import Series, Matrix
 
+
+
+class DF(pd.DataFrame):
+    """
+    """
+    
+    @property
+    def _constructor(self, **kwargs):
+        return self.__class__
+    
+    
+    @property
+    def _constructor_sliced(self):
+        return Series
+
+
+
+        
 
 
 def flatten(nested, depth=None):

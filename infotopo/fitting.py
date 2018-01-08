@@ -65,6 +65,7 @@ def fit_lm_scipy(res, p0=None, in_logp=True, **kwargs):
 
     if in_logp:
         p = np.exp(p)
+        p0 = np.exp(p0)        
         # FIXME: cov
 
     r = Series(infodict['fvec'], res.yids)

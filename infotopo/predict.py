@@ -8,7 +8,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from infotopo import util
+from .util import Series, Matrix
 
 
 
@@ -67,7 +67,7 @@ class Predict(object):
             if p is None:
                 p = self.p0
             y = _f(p)
-            return util.Series(y, yids)
+            return Series(y, index=self.yids)  # use attr hence updatable
         
         def Df(p=None):
             """Broadens the call signature to allow for None as argument and
@@ -76,7 +76,7 @@ class Predict(object):
             if p is None:
                 p = self.p0
             jac = _Df(p)
-            return util.Matrix(jac, index=yids, columns=pids) 
+            return Matrix(jac, index=self.yids, columns=self.pids) 
 
         self.f = f
         self.Df = Df
@@ -86,7 +86,7 @@ class Predict(object):
         self.yids = yids
         self.pdim = pdim 
         self.ydim = ydim 
-        self.p0 = util.Series(p0, pids)
+        self.p0 = Series(p0, pids)
         self._p0 = _p0
         self.rank = rank
         self.ptype = ptype
@@ -100,7 +100,24 @@ class Predict(object):
 
 
     def __add__(self, other):
-        raise NotImplementedError
+        """Concatenate the output: (f+g)(p) = (f(p),g(p))
+        """
+        assert self.pids == other.pids, "pids not the same"
+        assert all(self.p0 == other.p0), "p0 not the same"
+
+        if len(set(self.yids).intersection(set(other.yids))) > 0:
+            logging.warn("The two preds have overlapping yids.")
+        
+        def _f(p):
+            return np.concatenate((self._f(p), other._f(p)))
+        
+        def _Df(p):
+            return np.concatenate((self._Df(p), other._Df(p)))
+            
+
+        pred = Predict(f=_f, Df=_Df, p0=self.p0, pids=self.pids, 
+                       yids=self.yids+other.yids, ptype=self.ptype)
+        return pred
 
 
     def get_in_logp(self):
@@ -118,7 +135,7 @@ class Predict(object):
             return self._Df(p) * p
 
         logpids = map(lambda pid: 'log_'+pid, self.pids)
-        logp0 = util.Series(np.log(self._p0), logpids)
+        logp0 = Series(np.log(self._p0), logpids)
 
         pred_logp = Predict(f=_f_logp, Df=_Df_logp, p0=logp0,
                             pids=logpids, yids=self.yids, ptype='logp')
@@ -140,22 +157,23 @@ class Predict(object):
         """
         y = self.f(p)
         if errormodel == 'constant':
-            sigma = util.Series([constant_sigma] * len(y), self.yids)
+            sigma = Series([constant_sigma] * len(y), self.yids)
         if errormodel == 'cv':
             sigma = y * cv
         if errormodel == 'mixed':
-            sigma = util.Series(np.max((y*cv, [constant_sigma]*len(y)), axis=0),
+            sigma = Series(np.max((y*cv, [constant_sigma]*len(y)), axis=0),
                                 self.yids)
         return sigma
 
 
     def get_dat(self, p=None, **kwargs):
         """
-        *param p:
-        *param kwargs: kwargs of Predict.get_sigma
+        :param p:
+        :param kwargs: kwargs of Predict.get_sigma
         """
-        return pd.DataFrame([self.f(p), self.get_sigma(p=p, **kwargs)], 
-                            index=['Y','sigma']).T
+        return pd.DataFrame(np.transpose([self.f(p), 
+                                          self.get_sigma(p, **kwargs)]), 
+                            index=self.yids, columns=['Y','sigma'])
 
 
     def scale(self):
