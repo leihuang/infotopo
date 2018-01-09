@@ -1,14 +1,13 @@
 """
 """
 
-from __future__ import (absolute_import, division, print_function, 
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function
 import logging
 
 import numpy as np
 import pandas as pd
 
-from .util import Series, Matrix
+from infotopo.util import Series, Matrix
 
 
 
@@ -21,13 +20,14 @@ class Predict(object):
     """
 
     def __init__(self, f, Df=None, pids=None, yids=None, pdim=None, ydim=None, 
-                 p0=None, rank=None, ptype='', pred=None, **kwargs):
+                 p0=None, rank=None, ptype='', prior=None, pred=None, **kwargs):
         """
 
         :param f: takes array-like (np.array, series, list, tuple, etc.) 
             as argument and returns np.array; stored as attribute _f
         :param Df: takes array-like as argument and returns np.array; 
             stored as attribute _Df
+        :param prior: None or a callable
         """
 
         if pred is not None:
@@ -90,6 +90,7 @@ class Predict(object):
         self._p0 = _p0
         self.rank = rank
         self.ptype = ptype
+        self.prior = prior
         
         for k, v in kwargs.items():
             setattr(self, k, v)

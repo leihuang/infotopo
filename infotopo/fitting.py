@@ -1,13 +1,12 @@
 """
 """
 
-from __future__ import (absolute_import, division, print_function, 
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
-import scipy as sp
+from scipy import optimize
 
-from .util import Series, Matrix
+from infotopo.util import Series, Matrix
 
 
 
@@ -58,9 +57,9 @@ def fit_lm_scipy(res, p0=None, in_logp=True, **kwargs):
     kwargs = dict([item for item in kwargs.items() if item[0] in keys_scipy])
     kwargs['full_output'] = True
 
-    p, cov, infodict, mesg, ier = sp.optimize.leastsq(func=res._r, x0=p0, 
-                                                      Dfun=res._Dr, 
-                                                      **kwargs)
+    p, cov, infodict, mesg, ier = optimize.leastsq(func=res._r, x0=p0, 
+                                                   Dfun=res._Dr, 
+                                                   **kwargs)
     cost = res.cost(p)
 
     if in_logp:
@@ -77,7 +76,7 @@ def fit_lm_scipy(res, p0=None, in_logp=True, **kwargs):
               r=r, message=mesg, ier=ier, pids=res.pids)
     
     return fit
-fit_lm_scipy.__doc__ += sp.optimize.leastsq.__doc__
+fit_lm_scipy.__doc__ += optimize.leastsq.__doc__
 
 
 
