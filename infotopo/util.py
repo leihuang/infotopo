@@ -128,6 +128,11 @@ def flatten(nested, depth=None):
 
     :param depth: depth of flattening; a depth of 1 means one level down, and
         the default is deepest possible
+
+    >>> util.flatten([1,[2,3],[[4]]], depth=1)
+    [1, 2, 3, [4]]
+    >>> util.flatten([1,[2,3],[[4]]])
+    [1, 2, 3, 4]
     """
     nested = list(nested)
     
@@ -154,10 +159,12 @@ def flatten(nested, depth=None):
 
 
 
-def get_product():
+def get_product(*iterables):
     """
+    >>> get_product([1,2], [7,8,9], ['a'])
+    [(1, 7, 'a'), (1, 8, 'a'), (1, 9, 'a'), (2, 7, 'a'), (2, 8, 'a'), (2, 9, 'a')]
     """
-    raise NotImplementedError
+    return pd.MultiIndex.from_product(iterables).tolist()
 
 
 
