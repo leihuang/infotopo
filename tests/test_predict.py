@@ -1,9 +1,9 @@
 """
 """
 
-import pytest
+from __future__ import absolute_import, division, print_function
 
-import util
+from infotopo import util
 
 """
 
