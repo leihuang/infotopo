@@ -64,14 +64,17 @@ def fit_lm_scipy(res, p0=None, in_logp=True, **kwargs):
 
     if in_logp:
         p = np.exp(p)
-        p0 = np.exp(p0)        
+        p0 = np.exp(p0)
+        pids = map(lambda pid: pid.lstrip('log_'), res.pids)
         # FIXME: cov
+    else:
+        pids = res.pids
 
     r = Series(infodict['fvec'], res.yids)
     covmat = Matrix(cov, res.pids, res.pids)
     nfev = infodict['nfev']
     
-    fit = Fit(p=p, cost=cost, p0=p0,
+    fit = Fit(p=Series(p, pids), cost=cost, p0=Series(p0, pids),
               covmat=covmat, nfev=nfev, 
               r=r, message=mesg, ier=ier, pids=res.pids)
     
