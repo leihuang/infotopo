@@ -6,6 +6,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from infotopo.util import Series, Matrix
 
@@ -132,7 +133,7 @@ class Predict(object):
         
         def _Df_logp(logp):
             # d y/d logp = d y/(d p/p) = (d y/d p) * p
-            p = np.exp(logp)
+            p = np.array(np.exp(logp))
             return self._Df(p) * p
 
         logpids = map(lambda pid: 'log_'+pid, self.pids)
@@ -195,6 +196,51 @@ class Predict(object):
         if p is None:
             p = self.p0
         return np.linalg.svd(self._Df(p), compute_uv=False)
+
+
+    def plot_spectra(self, ps=None, filepath='', figsize=None, figtitle='',
+                     ylim=None, xylabels=None, subplots_adjust=None, 
+                     plot_tol=False):
+        """
+
+        :param ps: a list of parameter vectors
+        :param plot_tol: bool; if True, plot the threshold for numerical zero 
+        """
+        if ps is None:
+            ps = [self.p0]
+        
+        m, n = len(ps), len(ps[0])
+        
+        if figsize is None:
+            figsize = (2*m, 2*n**0.8)
+            
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(111)
+
+        for idx, p in enumerate(ps):
+            sigmas = self.get_spectrum(p)
+            for sigma in sigmas:
+                ax.plot([idx+0.1, idx+0.9], [sigma, sigma], c='k')
+            if plot_tol:
+                tol = sigmas[0] * max(len(self.pids), len(self.yids)) *\
+                    np.finfo(sigmas.dtype).eps
+                ax.plot([idx+0.1, idx+0.9], [tol, tol], c='r')
+            ax.set_yscale('log')
+
+        if ylim:
+            ax.set_ylim(xylims[1])
+        if xylabels:
+            ax.set_xlabel(xylabels[0])
+            ax.set_ylabel(xylabels[1])
+        
+        if subplots_adjust:
+            plt.subplots_adjust(**subplots_adjust)
+        
+        plt.title(figtitle) 
+        
+        plt.savefig(filepath)
+        plt.show()
+        plt.close()
 
 
 
