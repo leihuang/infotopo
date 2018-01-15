@@ -1,20 +1,6 @@
 """
 """
 
-#from rxnnet import network, experiments
-
-
-#net = network.Network()
-
-
-#expts_xc = experiments.Experiments()
-#expts_jc = experiments.Experiments()
-#expts = expts_xc + expts_jc
-
-#pred_xc = net.get_predict(expts_xc, tol_ss=1e-13)
-#pred_jc = net.get_predict(expts_jc, tol_ss=1e-13)
-#pred = net.get_predict(expts, tol_ss=1e-13)
-
 from __future__ import absolute_import, division, print_function
 
 import pytest
