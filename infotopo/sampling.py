@@ -7,6 +7,7 @@ from collections import OrderedDict as OD
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 from infotopo import util
 
@@ -30,7 +31,7 @@ class Ensemble(util.DF):
     def scatter(self, hist=False, log10=False, pts=None, colors=None,
                 figsize=None, adjust=None, labels=None, labelsize=6,
                 nodiag=False, lims=None,
-                filepath='', show=False):
+                filepath='', show=True):
         """
         :param hist: if True, also plot histograms for the marginal 
             distributions
@@ -38,6 +39,8 @@ class Ensemble(util.DF):
         :param colors: a str or a list
         :param filepath:
         """
+        n = self.ncol
+
         if figsize is None:
             figsize = (n*2, n*2)
         if labels is None:
@@ -136,6 +139,53 @@ class Ensemble(util.DF):
         plt.close()
 
 
+    def hist(self, log10=False, figsize=None, 
+             xlims=None, subplots_adjust=None, filepath='', **kwargs_hist):
+        """
+
+        :param log10:
+        :param figsize:
+        :param xlims:
+        :param subplots_adjust:
+        :param filepath:
+        :param kwargs_hist:
+        """
+        fig = plt.figure(figsize=figsize)
+
+        for i in range(self.ncol):
+            ax = fig.add_subplot(self.ncol, 1, i+1)
+
+            if log10:
+                dat = np.log10(self.iloc[:,i])
+                label = 'log10(%s)'%self.columns[i] 
+            else:
+                dat = self.iloc[:,i]
+                label = self.columns[i]
+
+            if xlims is not None:
+                ax.set_xlim(xlims[i])
+
+            ax.hist(dat, **kwargs_hist)
+            ax.set_ylabel(label, rotation='horizontal', labelpad=20)
+            ax.set_yticklabels([])
+            ax.plot(xlims[i], [0,0], '-k', lw=2)
+            
+            ax.grid(False)
+            
+            if i != self.ncol-1:
+                ax.set_xticklabels([])
+            
+        kwargs_adjust = {'wspace':0, 'hspace':0, 'top':0.9, 'bottom':0.1, 
+                         'left':0.1, 'right':0.9}    
+        if subplots_adjust:
+            kwargs_adjust.update(subplots_adjust)
+        plt.subplots_adjust(**kwargs_adjust)
+        
+        plt.savefig(filepath)
+        plt.show()
+        plt.close()
+
+
 
 def sampling(func, nstep, p0=None, in_logp=True, seed=None, 
              scheme_sampling='jtj', 
@@ -164,6 +214,13 @@ def sampling(func, nstep, p0=None, in_logp=True, seed=None,
                 (w1, w2) = (0, 1) means data sampling,
                 (w1, w2) = (1, 1) means bayesian sampling (default).
             Not implemented yet.
+    :param temperature:
+    :param stepscale:
+    :param cutoff_singval:
+    :param recalc_sampling_mat:
+    :param interval_print_step:
+    :param maxhour:
+    :param filepath:
     :param kwargs: a placeholder
 
     detailed balance:
@@ -234,9 +291,9 @@ def sampling(func, nstep, p0=None, in_logp=True, seed=None,
     p, e = p0, e0
     
     # start sampling
-    while nstep_tried < nstep and (time.time()-t0) < maxhour*3600:
+    while nstep_tried <= nstep and (time.time()-t0) < maxhour*3600:
 
-        if nstep_tried % interval_print_step == 0 and nstep_tried != 0:
+        if nstep_tried != 0 and nstep_tried % interval_print_step == 0:
             print(nstep_tried)
 
         if recalc_sampling_mat:
