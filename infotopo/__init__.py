@@ -1,4 +1,4 @@
 """
 """
 
-import predict, residual
+import predict, residual, fitting
