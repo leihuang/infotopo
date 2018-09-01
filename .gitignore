@@ -15,9 +15,7 @@
 *.gz
 *.zip
 
-*.log
 
- 
 ## OS generated files
 .DS_Store
 .DS_Store?
@@ -25,11 +23,39 @@
 .Trashes
 Thumbs.db
 
+## Editors
 .project
 .pydevproject
+.idea/*
 
-# Mathematica
+## Mathematica
 *.nb
 
-# directories
+## directories
 tmp/
+
+## tox testing tool
+.tox
+
+## Egg metadata
+*.egg-info
+
+## setup.py working and dist directory
+build
+dist
+
+## sphinx build directory
+doc/_build
+
+## distutils configuration
+site.cfg
+setup.cfg
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# pytest cache
+.cache/*
+.pytest_cache/*
