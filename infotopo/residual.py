@@ -8,7 +8,6 @@ import numpy as np
 from infotopo.util import Series, Matrix
 
 
-
 class Residual(object):
     """
     """
@@ -21,44 +20,44 @@ class Residual(object):
         self.yids = pred.yids
         self.pdim = pred.pdim
         self.ydim = pred.ydim
-        self._p0 = pred._p0
+        self.p0_ = pred.p0_
         self.p0 = pred.p0
         self.ptype = pred.ptype
         self.prior = pred.prior
 
         self.Y = dat.Y
-        self._Y = dat.Y.values
+        self.Y_ = dat.Y.values
         self.sigma = dat.sigma
-        self._sigma = dat.sigma.values
+        self.sigma_ = dat.sigma.values
 
         self.pred = pred
         self.dat = dat
 
-        def _r(p):
-            return (self._Y - pred._f(p)) / self._sigma
+        def r_(p):
+            return (self.Y_ - pred.f_(p)) / self.sigma_
 
         def r(p=None):
             if p is None:
-                p = self._p0
-            return Series(_r(p), self.yids)
+                p = self.p0_
+            return Series(r_(p), self.yids)
         
-        def _Dr(p):
-            return - (pred._Df(p).T / self._sigma).T
+        def Dr_(p):
+            return - (pred.Df_(p).T / self.sigma_).T
 
         def Dr(p=None):
             if p is None:
-                p = self._p0
-            return Matrix(_Dr(p), self.yids, self.pids)
+                p = self.p0_
+            else:
+                p = np.asarray(p)
+            return Matrix(Dr_(p), self.yids, self.pids)
         
-        self._r = _r
-        self._Dr = _Dr
+        self.r_ = r_
+        self.Dr_ = Dr_
         self.r = r
         self.Dr = Dr
-        
-    
+
     def __call__(self, p=None):
         return self.r(p=p)
-
 
     def get_in_logp(self):
         """
@@ -68,8 +67,11 @@ class Residual(object):
         pred_logp = pred.get_in_logp()
         return Residual(pred_logp, dat)
 
-
-    def cost(self, p=None):
-        return np.linalg.norm(self(p))**2 / 2
+    def get_cost(self, p=None):
+        if p is None:
+            p = self.p0_
+        else:
+            p = np.asarray(p)
+        return np.linalg.norm(self.r_(p))**2 / 2
 
 
