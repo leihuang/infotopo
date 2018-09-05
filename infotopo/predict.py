@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from infotopo import util
 from infotopo.util import Series, Matrix
 
 
@@ -42,9 +43,9 @@ class Predict(object):
         assert not (yids is None and ydim is None)
         
         if pids is None:
-            pids = ['p_%d'%i for i in range(1, pdim+1)]
+            pids = ['p_%d' % i for i in range(1, pdim+1)]
         if yids is None:
-            yids = ['y_%d'%i for i in range(1, ydim+1)]
+            yids = ['y_%d' % i for i in range(1, ydim+1)]
         if pdim is None:
             pdim = len(pids)
         if ydim is None:
@@ -64,7 +65,7 @@ class Predict(object):
             returns a series.
             """
             if p is None:
-                p = self.p0
+                p = self.p0_
             y = f_(p)
             return Series(y, index=self.yids)  # use attr hence updatable
         
@@ -73,16 +74,16 @@ class Predict(object):
             returns a matrix.
             """
             if p is None:
-                p = self.p0
+                p = self.p0_
             else:
                 p = np.asarray(p)
             jac = Df_(p)
-            return Matrix(jac, index=self.yids, columns=self.pids) 
+            return Matrix(jac, index=self.yids, columns=self.pids)
 
+        self.f_ = f_
+        self.Df_ = Df_
         self.f = f
         self.Df = Df
-        self.f_ = f_
-        self.Df = Df_
         self.pids = pids
         self.yids = yids
         self.pdim = pdim 
@@ -97,6 +98,8 @@ class Predict(object):
             setattr(self, k, v)
 
     def __call__(self, p=None):
+        if p is None:
+            p = self.p0
         return self.f(p=p)
 
     def __add__(self, other):
@@ -309,8 +312,8 @@ def str2predict(funcstr, pids, uids, us, c=None, p0=None, yids=None):
 def list2predict(funcstrs, pids, uids=None, us=None, yids=None, c=None, p0=None):
     """
 
-    >>> pred = list2predict(['exp(-p1*1)+exp(-p2*1)', 
-                             'exp(-p1*2)+exp(-p2*2)', 
+    >>> pred = list2predict(['exp(-p1*1)+exp(-p2*1)',
+                             'exp(-p1*2)+exp(-p2*2)',
                              'exp(-p1*1)-exp(-p2*1)'],
                             pids=['p1','p2'], p0=[1,2])
     
@@ -328,18 +331,18 @@ def list2predict(funcstrs, pids, uids=None, us=None, yids=None, c=None, p0=None)
         funcstrs = [util.sub_expr(funcstr, c) for funcstr in funcstrs]
     
     if uids is not None:
-        funstrs = [[util.sub_expr(funcstr, dict(zip(uids, u))) for u in us] 
-                   for funstr in funstrs]
-        funstrs = util.flatten(funstrs)
+        funcstrs = [[util.sub_expr(funcstr, dict(zip(uids, u))) for u in us]
+                    for funcstr in funcstrs]
+        funcstrs = util.flatten(funcstrs)
     
-    ystr = str(funstrs).replace("'", "")
+    ystr = str(funcstrs).replace("'", "")
     ycode = compile(ystr, '', 'eval')
     
     def f(p):
         return np.array(eval(ycode, dict(zip(pids, p)), mathsubs))
     
     jaclist = []
-    for funstr in funstrs:
+    for funstr in funcstrs:
         jacrow = [util.simplify_expr(util.diff_expr(funstr, pid))
                   for pid in pids]
         jaclist.append(jacrow)
@@ -353,7 +356,7 @@ def list2predict(funcstrs, pids, uids=None, us=None, yids=None, c=None, p0=None)
         p0 = [1] * len(pids)
         
     if yids is None:
-        yids = ['y%d'%(i+1) for i in range(len(funstrs))]
+        yids = ['y%d'%(i+1) for i in range(len(funcstrs))]
         
     return Predict(f=f, Df=Df, p0=p0, pids=pids, yids=yids)
 
