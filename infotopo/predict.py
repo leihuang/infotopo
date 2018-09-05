@@ -11,9 +11,7 @@ import matplotlib.pyplot as plt
 from infotopo.util import Series, Matrix
 
 
-
 RDELTAP = 1e-3
-
 
 
 class Predict(object):
@@ -24,17 +22,17 @@ class Predict(object):
                  p0=None, rank=None, ptype='', prior=None, pred=None, **kwargs):
         """
 
-        :param f: takes array-like (np.array, series, list, tuple, etc.) 
-            as argument and returns np.array; stored as attribute _f
-        :param Df: takes array-like as argument and returns np.array; 
-            stored as attribute _Df
+        :param f: takes a parameter (np.array) and returns
+            a prediction (np.array); stored as attribute f_
+        :param Df: takes a parameter (np.array) and returns
+            a jacobian matrix (np.array); stored as attribute Df_
         :param prior: None or a callable
         """
 
         if pred is not None:
-            f = pred._f
-            Df = pred._Df
-            p0 = pred._p0
+            f = pred.f_
+            Df = pred.Df_
+            p0 = pred.p0_
             pids = pred.pids
             yids = pred.yids
             rank = pred.rank
@@ -55,11 +53,11 @@ class Predict(object):
         if p0 is None:
             p0 = [1] * pdim
 
-        _f, _Df, _p0 = f, Df, np.array(p0)
+        f_, Df_, p0_ = f, Df, np.asarray(p0)
         
-        if _Df is None:
-            logging.warn("Df not given; calculated using finite difference.")
-            _Df = get_Df_fd(_f, rdeltap=RDELTAP)
+        if Df_ is None:
+            logging.warning("Df not given; calculated using finite difference.")
+            Df_ = get_Df_fd(f_, rdeltap=RDELTAP)
         
         def f(p=None):
             """Broadens the call signature to allow for None as argument and
@@ -67,7 +65,7 @@ class Predict(object):
             """
             if p is None:
                 p = self.p0
-            y = _f(p)
+            y = f_(p)
             return Series(y, index=self.yids)  # use attr hence updatable
         
         def Df(p=None):
@@ -76,19 +74,21 @@ class Predict(object):
             """
             if p is None:
                 p = self.p0
-            jac = _Df(p)
+            else:
+                p = np.asarray(p)
+            jac = Df_(p)
             return Matrix(jac, index=self.yids, columns=self.pids) 
 
         self.f = f
         self.Df = Df
-        self._f = _f
-        self._Df = _Df
+        self.f_ = f_
+        self.Df = Df_
         self.pids = pids
         self.yids = yids
         self.pdim = pdim 
         self.ydim = ydim 
         self.p0 = Series(p0, pids)
-        self._p0 = _p0
+        self.p0_ = p0_
         self.rank = rank
         self.ptype = ptype
         self.prior = prior
@@ -96,10 +96,8 @@ class Predict(object):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-
     def __call__(self, p=None):
         return self.f(p=p)
-
 
     def __add__(self, other):
         """Concatenate the output: (f+g)(p) = (f(p),g(p))
@@ -108,41 +106,38 @@ class Predict(object):
         assert all(self.p0 == other.p0), "p0 not the same"
 
         if len(set(self.yids).intersection(set(other.yids))) > 0:
-            logging.warn("The two preds have overlapping yids.")
+            logging.warning("The two preds have overlapping yids.")
         
-        def _f(p):
-            return np.concatenate((self._f(p), other._f(p)))
+        def f_(p):
+            return np.concatenate((self.f_(p), other.f_(p)))
         
-        def _Df(p):
-            return np.concatenate((self._Df(p), other._Df(p)))
-            
+        def Df_(p):
+            return np.concatenate((self.Df_(p), other.Df_(p)))
 
-        pred = Predict(f=_f, Df=_Df, p0=self.p0, pids=self.pids, 
+        pred = Predict(f=f_, Df=Df_, p0=self.p0, pids=self.pids,
                        yids=self.yids+other.yids, ptype=self.ptype)
         return pred
 
-
     def get_in_logp(self):
-        """Get a Prediction object in log parameters.
+        """Get a Predict object in log parameters.
         """
         assert self.ptype == '', "not in bare parametrization"
         
-        def _f_logp(logp):
+        def f_logp_(logp):
             p = np.exp(logp)
-            return self._f(p)
+            return self.f_(p)
         
-        def _Df_logp(logp):
+        def Df_logp_(logp):
             # d y/d logp = d y/(d p/p) = (d y/d p) * p
             p = np.array(np.exp(logp))
-            return self._Df(p) * p
+            return self.Df_(p) * p
 
         logpids = map(lambda pid: 'log_'+pid, self.pids)
-        logp0 = Series(np.log(self._p0), logpids)
+        logp0 = Series(np.log(self.p0_), logpids)
 
-        pred_logp = Predict(f=_f_logp, Df=_Df_logp, p0=logp0,
+        pred_logp = Predict(f=f_logp_, Df=Df_logp_, p0=logp0,
                             pids=logpids, yids=self.yids, ptype='logp')
         return pred_logp
-
 
     def get_sigma(self, p=None, errormodel='constant', constant_sigma=1, 
                   cv=0.1):
@@ -164,9 +159,8 @@ class Predict(object):
             sigma = y * cv
         if errormodel == 'mixed':
             sigma = Series(np.max((y*cv, [constant_sigma]*len(y)), axis=0),
-                                self.yids)
+                           self.yids)
         return sigma
-
 
     def get_dat(self, p=None, **kwargs):
         """
@@ -177,26 +171,24 @@ class Predict(object):
                                           self.get_sigma(p, **kwargs)]), 
                             index=self.yids, columns=['Y','sigma'])
 
-
     def scale(self):
         """
         """
         raise NotImplementedError
-
 
     def currying(self):
         """
         """
         raise NotImplementedError
 
-
     def get_spectrum(self, p=None):
         """
         """
         if p is None:
             p = self.p0
-        return np.linalg.svd(self._Df(p), compute_uv=False)
-
+        else:
+            p = np.asarray(p)
+        return np.linalg.svd(self.Df_(p), compute_uv=False)
 
     def plot_spectra(self, ps=None, filepath='', figsize=None, figtitle='',
                      ylim=None, xylabels=None, subplots_adjust=None, 
@@ -228,7 +220,7 @@ class Predict(object):
             ax.set_yscale('log')
 
         if ylim:
-            ax.set_ylim(xylims[1])
+            ax.set_ylim(ylim)
         if xylabels:
             ax.set_xlabel(xylabels[0])
             ax.set_ylabel(xylabels[1])
@@ -243,7 +235,6 @@ class Predict(object):
         plt.close()
 
 
-
 def get_Df_fd(f, rdeltap=None):
     """Get jacobian of f through symmetric finite difference
         
@@ -252,7 +243,7 @@ def get_Df_fd(f, rdeltap=None):
     if rdeltap is None:
         rdeltap = RDELTAP
     
-    def _Df(p):
+    def Df_(p):
         jacT = []  # jacobian matrix transpose
         for i, p_i in enumerate(p):
             deltap_i = max(p_i * rdeltap, rdeltap)
@@ -260,11 +251,10 @@ def get_Df_fd(f, rdeltap=None):
             deltap[i] = deltap_i
             p_plus = p + deltap
             p_minus = p - deltap
-            jacT.append((f(p_plus) - f(p_minus))/ 2 / deltap_i)
+            jacT.append((f(p_plus) - f(p_minus)) / 2 / deltap_i)
         jac = np.transpose(jacT)
         return jac
-    return _Df
-
+    return Df_
 
 
 mathsubs = dict(sqrt=np.sqrt, exp=np.exp, log=np.log,
@@ -272,7 +262,6 @@ mathsubs = dict(sqrt=np.sqrt, exp=np.exp, log=np.log,
                 arctan=np.arctan, atan=np.arctan,
                 sin=np.sin, cos=np.cos,
                 pi=np.pi)
-
 
 
 def str2predict(funcstr, pids, uids, us, c=None, p0=None, yids=None):
@@ -315,7 +304,6 @@ def str2predict(funcstr, pids, uids, us, c=None, p0=None, yids=None):
         yids = ['u=%s'%str(list(u)) for u in us]
         
     return Predict(f=f, Df=Df, p0=p0, pids=pids, yids=yids)
-
 
 
 def list2predict(funcstrs, pids, uids=None, us=None, yids=None, c=None, p0=None):
@@ -368,7 +356,6 @@ def list2predict(funcstrs, pids, uids=None, us=None, yids=None, c=None, p0=None)
         yids = ['y%d'%(i+1) for i in range(len(funstrs))]
         
     return Predict(f=f, Df=Df, p0=p0, pids=pids, yids=yids)
-
 
 
 def list2predict2(funcstrs, pids, uids=None, us=None, yids=None, c=None, 
