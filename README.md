@@ -4,7 +4,7 @@ A Python package for carrying out some analysis of "typical"<sup>1</sup> mathema
 * parameter estimation 
 * sampling of parameter posterior distribution
 * model reduction
-* model comparison
+* model selection
 
 The frameworks and methods here follow the treatments of **information geometry** and its extension **information topology**<sup>2</sup>, hence the name of the package. 
 
